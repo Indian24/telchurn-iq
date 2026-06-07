@@ -17,6 +17,38 @@ export const HealthCheckResponse = zod.object({
 
 
 /**
+ * @summary Data quality metrics and validation report
+ */
+export const GetDataQualityResponse = zod.object({
+  "totalRecords": zod.number(),
+  "activeRecords": zod.number(),
+  "churnedRecords": zod.number(),
+  "duplicateCount": zod.number(),
+  "overallScore": zod.number(),
+  "completeness": zod.array(zod.object({
+  "field": zod.string(),
+  "nonNullCount": zod.number(),
+  "nullCount": zod.number(),
+  "completenessRate": zod.number()
+})),
+  "validityChecks": zod.array(zod.object({
+  "checkName": zod.string(),
+  "passed": zod.boolean(),
+  "violations": zod.number(),
+  "rule": zod.string()
+})),
+  "outlierSummary": zod.array(zod.object({
+  "field": zod.string(),
+  "mean": zod.number(),
+  "stdDev": zod.number(),
+  "lowerBound": zod.number(),
+  "upperBound": zod.number(),
+  "outlierCount": zod.number()
+}))
+})
+
+
+/**
  * @summary Executive overview KPIs
  */
 export const GetExecutiveSummaryResponse = zod.object({

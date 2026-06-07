@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { LayoutDashboard, Users, TrendingDown, DollarSign, Map, BrainCircuit } from "lucide-react";
+import { LayoutDashboard, Users, TrendingDown, DollarSign, Map, BrainCircuit, ShieldCheck, Network } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
@@ -9,6 +9,8 @@ const NAV_ITEMS = [
   { href: "/customers", label: "Customer Explorer", icon: Users },
   { href: "/regional", label: "Regional Performance", icon: Map },
   { href: "/ml", label: "ML & Prediction", icon: BrainCircuit },
+  { href: "/data-quality", label: "Data Quality", icon: ShieldCheck },
+  { href: "/architecture", label: "Architecture", icon: Network },
 ];
 
 export function Sidebar() {

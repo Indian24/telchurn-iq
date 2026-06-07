@@ -19,6 +19,7 @@ import {
   GetSatisfactionDistributionResponse,
   GetPaymentMethodsResponse,
   GetContractAnalysisResponse,
+  GetDataQualityResponse,
 } from "@workspace/api-zod";
 
 const router: IRouter = Router();
@@ -794,6 +795,105 @@ router.get("/telecom/contract-analysis", async (req, res): Promise<void> => {
   });
 
   res.json(GetContractAnalysisResponse.parse(result));
+});
+
+// ─────────────────────────────────────────────
+// GET /telecom/data-quality — Data Quality Report
+// ─────────────────────────────────────────────
+router.get("/telecom/data-quality", async (req, res): Promise<void> => {
+  const [totals, outlierRows] = await Promise.all([
+    db
+      .select({
+        totalRecords: count(),
+        activeRecords: sql<number>`cast(sum(case when ${customersTable.churn} = 0 then 1 else 0 end) as int)`,
+        churnedRecords: sql<number>`cast(sum(case when ${customersTable.churn} = 1 then 1 else 0 end) as int)`,
+        dupCount: sql<number>`cast((select count(*) from (select customer_id from customers group by customer_id having count(*) > 1) d) as int)`,
+        nullAge: sql<number>`cast(sum(case when ${customersTable.age} is null then 1 else 0 end) as int)`,
+        nullState: sql<number>`cast(sum(case when ${customersTable.state} is null then 1 else 0 end) as int)`,
+        nullTenure: sql<number>`cast(sum(case when ${customersTable.tenure} is null then 1 else 0 end) as int)`,
+        nullMonthly: sql<number>`cast(sum(case when ${customersTable.monthlyCharges} is null then 1 else 0 end) as int)`,
+        nullChurnProb: sql<number>`cast(sum(case when ${customersTable.churnProbability} is null then 1 else 0 end) as int)`,
+        nullSatisfaction: sql<number>`cast(sum(case when ${customersTable.customerSatisfactionScore} is null then 1 else 0 end) as int)`,
+        nullRiskTier: sql<number>`cast(sum(case when ${customersTable.riskTier} is null then 1 else 0 end) as int)`,
+        nullArpu: sql<number>`cast(sum(case when ${customersTable.arpu} is null then 1 else 0 end) as int)`,
+        invalidAge: sql<number>`cast(sum(case when ${customersTable.age} < 18 or ${customersTable.age} > 100 then 1 else 0 end) as int)`,
+        invalidChurn: sql<number>`cast(sum(case when ${customersTable.churn} not in (0,1) then 1 else 0 end) as int)`,
+        invalidSat: sql<number>`cast(sum(case when ${customersTable.customerSatisfactionScore} < 1 or ${customersTable.customerSatisfactionScore} > 5 then 1 else 0 end) as int)`,
+        invalidProb: sql<number>`cast(sum(case when ${customersTable.churnProbability} < 0 or ${customersTable.churnProbability} > 1 then 1 else 0 end) as int)`,
+        invalidRisk: sql<number>`cast(sum(case when ${customersTable.riskTier} not in ('High','Medium','Low') then 1 else 0 end) as int)`,
+        negativeCharges: sql<number>`cast(sum(case when ${customersTable.monthlyCharges} < 0 then 1 else 0 end) as int)`,
+        avgMonthly: avg(customersTable.monthlyCharges),
+        stdMonthly: sql<number>`cast(stddev(${customersTable.monthlyCharges}) as numeric)`,
+        avgArpu: avg(customersTable.arpu),
+        stdArpu: sql<number>`cast(stddev(${customersTable.arpu}) as numeric)`,
+        avgClv: avg(customersTable.customerLifetimeValue),
+        stdClv: sql<number>`cast(stddev(${customersTable.customerLifetimeValue}) as numeric)`,
+      })
+      .from(customersTable),
+    db
+      .select({
+        outlierMonthly: sql<number>`cast(sum(case when ${customersTable.monthlyCharges} < (select avg(monthly_charges) - 3*stddev(monthly_charges) from customers) or ${customersTable.monthlyCharges} > (select avg(monthly_charges) + 3*stddev(monthly_charges) from customers) then 1 else 0 end) as int)`,
+        outlierArpu: sql<number>`cast(sum(case when ${customersTable.arpu} < (select avg(arpu) - 3*stddev(arpu) from customers) or ${customersTable.arpu} > (select avg(arpu) + 3*stddev(arpu) from customers) then 1 else 0 end) as int)`,
+        outlierClv: sql<number>`cast(sum(case when ${customersTable.customerLifetimeValue} < (select avg(customer_lifetime_value) - 3*stddev(customer_lifetime_value) from customers) or ${customersTable.customerLifetimeValue} > (select avg(customer_lifetime_value) + 3*stddev(customer_lifetime_value) from customers) then 1 else 0 end) as int)`,
+      })
+      .from(customersTable),
+  ]);
+
+  const t = totals[0];
+  const o = outlierRows[0];
+  const total = Number(t.totalRecords) || 50000;
+
+  const completeness = [
+    { field: "customer_id", nonNullCount: total, nullCount: 0, completenessRate: 100 },
+    { field: "age", nonNullCount: total - Number(t.nullAge), nullCount: Number(t.nullAge), completenessRate: parseFloat(((1 - Number(t.nullAge) / total) * 100).toFixed(2)) },
+    { field: "state", nonNullCount: total - Number(t.nullState), nullCount: Number(t.nullState), completenessRate: parseFloat(((1 - Number(t.nullState) / total) * 100).toFixed(2)) },
+    { field: "tenure", nonNullCount: total - Number(t.nullTenure), nullCount: Number(t.nullTenure), completenessRate: parseFloat(((1 - Number(t.nullTenure) / total) * 100).toFixed(2)) },
+    { field: "monthly_charges", nonNullCount: total - Number(t.nullMonthly), nullCount: Number(t.nullMonthly), completenessRate: parseFloat(((1 - Number(t.nullMonthly) / total) * 100).toFixed(2)) },
+    { field: "churn_probability", nonNullCount: total - Number(t.nullChurnProb), nullCount: Number(t.nullChurnProb), completenessRate: parseFloat(((1 - Number(t.nullChurnProb) / total) * 100).toFixed(2)) },
+    { field: "satisfaction_score", nonNullCount: total - Number(t.nullSatisfaction), nullCount: Number(t.nullSatisfaction), completenessRate: parseFloat(((1 - Number(t.nullSatisfaction) / total) * 100).toFixed(2)) },
+    { field: "risk_tier", nonNullCount: total - Number(t.nullRiskTier), nullCount: Number(t.nullRiskTier), completenessRate: parseFloat(((1 - Number(t.nullRiskTier) / total) * 100).toFixed(2)) },
+    { field: "arpu", nonNullCount: total - Number(t.nullArpu), nullCount: Number(t.nullArpu), completenessRate: parseFloat(((1 - Number(t.nullArpu) / total) * 100).toFixed(2)) },
+  ];
+
+  const validityChecks = [
+    { checkName: "age_in_range", passed: Number(t.invalidAge) === 0, violations: Number(t.invalidAge), rule: "Age must be 18–100" },
+    { checkName: "valid_churn_flag", passed: Number(t.invalidChurn) === 0, violations: Number(t.invalidChurn), rule: "Churn must be 0 or 1" },
+    { checkName: "satisfaction_in_range", passed: Number(t.invalidSat) === 0, violations: Number(t.invalidSat), rule: "Satisfaction must be 1.0–5.0" },
+    { checkName: "churn_probability_range", passed: Number(t.invalidProb) === 0, violations: Number(t.invalidProb), rule: "Churn probability must be 0–1" },
+    { checkName: "valid_risk_tier", passed: Number(t.invalidRisk) === 0, violations: Number(t.invalidRisk), rule: "Risk tier must be High, Medium, or Low" },
+    { checkName: "non_negative_charges", passed: Number(t.negativeCharges) === 0, violations: Number(t.negativeCharges), rule: "Monthly charges cannot be negative" },
+    { checkName: "no_duplicate_ids", passed: Number(t.dupCount) === 0, violations: Number(t.dupCount), rule: "customer_id must be unique" },
+  ];
+
+  const avgMonthly = parseFloat(Number(t.avgMonthly).toFixed(2));
+  const stdMonthly = parseFloat(Number(t.stdMonthly).toFixed(2));
+  const avgArpu = parseFloat(Number(t.avgArpu).toFixed(2));
+  const stdArpu = parseFloat(Number(t.stdArpu).toFixed(2));
+  const avgClv = parseFloat(Number(t.avgClv).toFixed(2));
+  const stdClv = parseFloat(Number(t.stdClv).toFixed(2));
+
+  const outlierSummary = [
+    { field: "monthly_charges", mean: avgMonthly, stdDev: stdMonthly, lowerBound: parseFloat((avgMonthly - 3 * stdMonthly).toFixed(2)), upperBound: parseFloat((avgMonthly + 3 * stdMonthly).toFixed(2)), outlierCount: Number(o.outlierMonthly) },
+    { field: "arpu", mean: avgArpu, stdDev: stdArpu, lowerBound: parseFloat((avgArpu - 3 * stdArpu).toFixed(2)), upperBound: parseFloat((avgArpu + 3 * stdArpu).toFixed(2)), outlierCount: Number(o.outlierArpu) },
+    { field: "customer_lifetime_value", mean: avgClv, stdDev: stdClv, lowerBound: parseFloat((avgClv - 3 * stdClv).toFixed(2)), upperBound: parseFloat((avgClv + 3 * stdClv).toFixed(2)), outlierCount: Number(o.outlierClv) },
+  ];
+
+  const totalChecks = validityChecks.length + completeness.length;
+  const passedChecks = validityChecks.filter((c) => c.passed).length + completeness.filter((c) => c.completenessRate >= 99).length;
+  const overallScore = parseFloat(((passedChecks / totalChecks) * 100).toFixed(1));
+
+  const result = {
+    totalRecords: Number(t.totalRecords),
+    activeRecords: Number(t.activeRecords),
+    churnedRecords: Number(t.churnedRecords),
+    duplicateCount: Number(t.dupCount),
+    overallScore,
+    completeness,
+    validityChecks,
+    outlierSummary,
+  };
+
+  res.json(GetDataQualityResponse.parse(result));
 });
 
 export default router;

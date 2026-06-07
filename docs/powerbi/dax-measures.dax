@@ -1,0 +1,233 @@
+// ═══════════════════════════════════════════════════════
+// TelChurn IQ — Complete DAX Measures Library
+// EY Telecom Analytics Practice | Power BI Desktop
+// Copy each measure into Power BI using "New Measure"
+// ═══════════════════════════════════════════════════════
+
+// ───────────────────────────────────────────────────────
+// SECTION 1: CORE KPI MEASURES
+// ───────────────────────────────────────────────────────
+
+Total Customers = 
+COUNTROWS(customers)
+
+Active Customers = 
+CALCULATE(
+    COUNTROWS(customers),
+    customers[churn] = 0
+)
+
+Churned Customers = 
+CALCULATE(
+    COUNTROWS(customers),
+    customers[churn] = 1
+)
+
+Churn Rate % = 
+DIVIDE([Churned Customers], [Total Customers], 0) * 100
+
+Retention Rate % = 
+100 - [Churn Rate %]
+
+Total Revenue = 
+SUM(customers[revenue])
+
+Total Revenue (Cr) = 
+DIVIDE([Total Revenue], 10000000)
+
+Avg ARPU = 
+AVERAGE(customers[arpu])
+
+Avg CLV = 
+AVERAGE(customers[customer_lifetime_value])
+
+Avg Satisfaction Score = 
+AVERAGE(customers[customer_satisfaction_score])
+
+Avg Tenure (Months) = 
+AVERAGE(customers[tenure])
+
+Revenue at Risk = 
+CALCULATE(
+    SUM(customers[arpu]),
+    customers[churn] = 0,
+    customers[risk_tier] = "High"
+)
+
+Revenue at Risk (Cr) = 
+DIVIDE([Revenue at Risk], 10000000)
+
+// ───────────────────────────────────────────────────────
+// SECTION 2: RISK TIER MEASURES
+// ───────────────────────────────────────────────────────
+
+High Risk Count = 
+CALCULATE(
+    COUNTROWS(customers),
+    customers[risk_tier] = "High",
+    customers[churn] = 0
+)
+
+Medium Risk Count = 
+CALCULATE(
+    COUNTROWS(customers),
+    customers[risk_tier] = "Medium",
+    customers[churn] = 0
+)
+
+Low Risk Count = 
+CALCULATE(
+    COUNTROWS(customers),
+    customers[risk_tier] = "Low",
+    customers[churn] = 0
+)
+
+High Risk % = 
+DIVIDE([High Risk Count], [Active Customers], 0) * 100
+
+// ───────────────────────────────────────────────────────
+// SECTION 3: REVENUE ANALYTICS
+// ───────────────────────────────────────────────────────
+
+Revenue Lost to Churn = 
+CALCULATE(
+    SUM(customers[revenue]),
+    customers[churn] = 1
+)
+
+Revenue Retained = 
+CALCULATE(
+    SUM(customers[revenue]),
+    customers[churn] = 0
+)
+
+Revenue at Risk % = 
+DIVIDE([Revenue at Risk], [Total Revenue], 0) * 100
+
+Expected Revenue Loss = 
+SUMX(
+    customers,
+    customers[arpu] * customers[churn_probability]
+)
+
+Expected CLV Loss = 
+SUMX(
+    FILTER(customers, customers[churn] = 0),
+    customers[customer_lifetime_value] * customers[churn_probability]
+)
+
+Avg Monthly Charges = 
+AVERAGE(customers[monthly_charges])
+
+Total Monthly Revenue = 
+SUM(customers[monthly_charges])
+
+// ───────────────────────────────────────────────────────
+// SECTION 4: ML MODEL PERFORMANCE
+// ───────────────────────────────────────────────────────
+
+True Positives = 
+CALCULATE(
+    COUNTROWS(customers),
+    customers[churn] = 1,
+    customers[churn_probability] >= 0.5
+)
+
+False Positives = 
+CALCULATE(
+    COUNTROWS(customers),
+    customers[churn] = 0,
+    customers[churn_probability] >= 0.5
+)
+
+False Negatives = 
+CALCULATE(
+    COUNTROWS(customers),
+    customers[churn] = 1,
+    customers[churn_probability] < 0.5
+)
+
+True Negatives = 
+CALCULATE(
+    COUNTROWS(customers),
+    customers[churn] = 0,
+    customers[churn_probability] < 0.5
+)
+
+Model Accuracy % = 
+DIVIDE(
+    [True Positives] + [True Negatives],
+    [Total Customers],
+    0
+) * 100
+
+Model Precision % = 
+DIVIDE(
+    [True Positives],
+    [True Positives] + [False Positives],
+    0
+) * 100
+
+Model Recall % = 
+DIVIDE(
+    [True Positives],
+    [True Positives] + [False Negatives],
+    0
+) * 100
+
+Model F1 Score % = 
+DIVIDE(
+    2 * [True Positives],
+    2 * [True Positives] + [False Positives] + [False Negatives],
+    0
+) * 100
+
+Avg Churn Probability = 
+AVERAGE(customers[churn_probability])
+
+// ───────────────────────────────────────────────────────
+// SECTION 5: CUSTOMER QUALITY METRICS
+// ───────────────────────────────────────────────────────
+
+Avg Complaint Count = 
+AVERAGE(customers[complaint_count])
+
+Avg Network Issues = 
+AVERAGE(customers[network_issues])
+
+Avg Support Calls = 
+AVERAGE(customers[customer_support_calls])
+
+High Satisfaction Customers = 
+CALCULATE(
+    COUNTROWS(customers),
+    customers[customer_satisfaction_score] >= 4
+)
+
+Low Satisfaction Customers = 
+CALCULATE(
+    COUNTROWS(customers),
+    customers[customer_satisfaction_score] <= 2
+)
+
+// ───────────────────────────────────────────────────────
+// SECTION 6: FORMATTING HELPERS
+// ───────────────────────────────────────────────────────
+
+Churn Rate Label = 
+FORMAT([Churn Rate %], "0.00") & "%"
+
+Revenue Label = 
+"₹" & FORMAT([Total Revenue (Cr)], "0.00") & " Cr"
+
+ARPU Label = 
+"₹" & FORMAT([Avg ARPU], "#,##0")
+
+CLV Label = 
+"₹" & FORMAT([Avg CLV], "#,##0")
+
+Satisfaction Label = 
+FORMAT([Avg Satisfaction Score], "0.0") & "/5"
+
+Risk at Risk Label = 
+"₹" & FORMAT([Revenue at Risk] / 100000, "0.00") & " L/month"

@@ -26,6 +26,19 @@ paths:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
 
+  /telecom/data-quality:
+    get:
+      operationId: getDataQuality
+      tags: [telecom]
+      summary: Data quality metrics and validation report
+      responses:
+        "200":
+          description: Data quality report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataQualityReport"
+
   /telecom/summary:
     get:
       operationId: getExecutiveSummary
@@ -854,3 +867,73 @@ components:
           type: number
         avgClv:
           type: number
+
+    CompletenessItem:
+      type: object
+      required: [field, nonNullCount, nullCount, completenessRate]
+      properties:
+        field:
+          type: string
+        nonNullCount:
+          type: integer
+        nullCount:
+          type: integer
+        completenessRate:
+          type: number
+
+    ValidityCheckItem:
+      type: object
+      required: [checkName, passed, violations, rule]
+      properties:
+        checkName:
+          type: string
+        passed:
+          type: boolean
+        violations:
+          type: integer
+        rule:
+          type: string
+
+    OutlierItem:
+      type: object
+      required: [field, mean, stdDev, lowerBound, upperBound, outlierCount]
+      properties:
+        field:
+          type: string
+        mean:
+          type: number
+        stdDev:
+          type: number
+        lowerBound:
+          type: number
+        upperBound:
+          type: number
+        outlierCount:
+          type: integer
+
+    DataQualityReport:
+      type: object
+      required: [totalRecords, activeRecords, churnedRecords, duplicateCount, overallScore, completeness, validityChecks, outlierSummary]
+      properties:
+        totalRecords:
+          type: integer
+        activeRecords:
+          type: integer
+        churnedRecords:
+          type: integer
+        duplicateCount:
+          type: integer
+        overallScore:
+          type: number
+        completeness:
+          type: array
+          items:
+            $ref: "#/components/schemas/CompletenessItem"
+        validityChecks:
+          type: array
+          items:
+            $ref: "#/components/schemas/ValidityCheckItem"
+        outlierSummary:
+          type: array
+          items:
+            $ref: "#/components/schemas/OutlierItem"

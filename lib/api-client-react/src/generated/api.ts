@@ -24,6 +24,7 @@ import type {
   ContractItem,
   CustomerDetail,
   CustomerListResponse,
+  DataQualityReport,
   ExecutiveSummary,
   GetCustomersParams,
   GetTopAtRiskParams,
@@ -115,6 +116,83 @@ export function useHealthCheck<TData = Awaited<ReturnType<typeof healthCheck>>, 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getHealthCheckQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetDataQualityUrl = () => {
+
+
+
+
+  return `/api/telecom/data-quality`
+}
+
+/**
+ * @summary Data quality metrics and validation report
+ */
+export const getDataQuality = async ( options?: RequestInit): Promise<DataQualityReport> => {
+
+  return customFetch<DataQualityReport>(getGetDataQualityUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetDataQualityQueryKey = () => {
+    return [
+    `/api/telecom/data-quality`
+    ] as const;
+    }
+
+
+export const getGetDataQualityQueryOptions = <TData = Awaited<ReturnType<typeof getDataQuality>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getDataQuality>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetDataQualityQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getDataQuality>>> = ({ signal }) => getDataQuality({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getDataQuality>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetDataQualityQueryResult = NonNullable<Awaited<ReturnType<typeof getDataQuality>>>
+export type GetDataQualityQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Data quality metrics and validation report
+ */
+
+export function useGetDataQuality<TData = Awaited<ReturnType<typeof getDataQuality>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getDataQuality>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetDataQualityQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

@@ -1,0 +1,160 @@
+# TelChurn IQ — Data Dictionary
+**EY Telecom Analytics Practice | Version 1.0 | June 2025**
+
+---
+
+## Overview
+
+This document describes all data fields in the **TelChurn IQ** telecom customer analytics platform. The primary data store is the `customers` table in PostgreSQL, containing 50,000 synthetic telecom customer records representative of an Indian telecom operator.
+
+---
+
+## Table: `customers`
+
+**Description:** Core customer fact table containing demographics, subscription details, usage metrics, financial attributes, and ML-derived churn risk scores.
+
+**Row Count:** 50,000  
+**Grain:** One row per customer (unique by `customer_id`)  
+**Refresh Cadence:** Daily batch ETL at 02:00 IST
+
+---
+
+### Identity Fields
+
+| Column | Data Type | Nullable | Example | Description |
+|--------|-----------|----------|---------|-------------|
+| `id` | `serial` (PK) | No | `1` | Auto-increment surrogate primary key |
+| `customer_id` | `text` (UNIQUE) | No | `CUST000001` | Business primary key. Format: `CUST` + 6-digit zero-padded integer. Unique across all records. |
+| `created_at` | `timestamptz` | No | `2025-01-15 02:34:00+05:30` | Record creation timestamp (IST). Auto-populated on insert. |
+
+---
+
+### Demographic Fields
+
+| Column | Data Type | Nullable | Range / Domain | Description |
+|--------|-----------|----------|----------------|-------------|
+| `gender` | `text` | No | `Male`, `Female`, `Other` | Customer gender. Used for demographic segmentation. |
+| `age` | `integer` | No | 18–75 | Customer age in years. Minimum 18 (adult subscribers only). |
+| `state` | `text` | No | 20 Indian states | Indian state of residence. Used for regional performance analysis. Values include: Maharashtra, Karnataka, Tamil Nadu, Delhi, Gujarat, Rajasthan, Uttar Pradesh, West Bengal, Punjab, Haryana, Kerala, Andhra Pradesh, Telangana, Bihar, Odisha, Jharkhand, Himachal Pradesh, Uttarakhand, Assam, Goa. |
+| `city` | `text` | No | Free text | City of residence. Derived from state seeding. Informational only. |
+
+---
+
+### Subscription Fields
+
+| Column | Data Type | Nullable | Range / Domain | Description |
+|--------|-----------|----------|----------------|-------------|
+| `tenure` | `integer` | No | 1–84 | Number of months the customer has been active with the operator. Higher values indicate longer loyalty. |
+| `subscription_type` | `text` | No | `Basic`, `Standard`, `Premium`, `Enterprise` | Telecom service tier. Maps directly to pricing and feature access levels. Enterprise is highest ARPU. |
+| `contract_type` | `text` | No | `Month-to-Month`, `One Year`, `Two Year` | Customer contract commitment. Month-to-Month carries highest churn risk. |
+| `payment_method` | `text` | No | `UPI`, `Credit Card`, `Net Banking`, `Debit Card`, `Cash` | Payment mechanism. UPI is predominant in the dataset (Indian market). |
+
+---
+
+### Usage Metrics
+
+| Column | Data Type | Nullable | Range / Domain | Business Logic |
+|--------|-----------|----------|----------------|----------------|
+| `internet_usage_gb` | `real` | No | 0.5–150 GB | Monthly internet consumption in gigabytes. Correlated with subscription tier. |
+| `voice_minutes` | `real` | No | 10–1200 min | Monthly outgoing voice call minutes. Higher for Basic and Standard plans. |
+| `sms_usage` | `real` | No | 0–500 | Monthly SMS count. Declining metric as OTT messaging grows. |
+| `recharge_frequency` | `integer` | No | 1–10 | Number of recharges per month. Proxy for engagement; prepaid customers may have higher frequency. |
+| `customer_support_calls` | `integer` | No | 0–10 | Number of calls made to customer care per month. High values indicate dissatisfaction or complexity. |
+| `complaint_count` | `integer` | No | 0–10 | Formal complaints lodged in the billing/ticketing system. Strong positive predictor of churn. |
+| `network_issues` | `integer` | No | 0–10 | Network outage or connectivity issues reported or logged per month. Strong churn driver. |
+
+---
+
+### Financial Metrics
+
+| Column | Data Type | Nullable | Unit | Description |
+|--------|-----------|----------|------|-------------|
+| `monthly_charges` | `real` | No | ₹ INR | Monthly plan charge billed to the customer. Ranges from ₹199 (Basic) to ₹2,499 (Enterprise). |
+| `total_charges` | `real` | No | ₹ INR | Cumulative charges over customer lifetime. Computed as `monthly_charges × tenure` with adjustments. |
+| `arpu` | `real` | No | ₹ INR/month | Average Revenue Per User. Derived as `monthly_charges × 0.92` (adjusting for discounts and taxes). Key performance indicator. |
+| `revenue` | `real` | No | ₹ INR | Total historical revenue from customer. Computed as `arpu × max(tenure, 1)`. |
+
+---
+
+### ML-Derived Fields
+
+| Column | Data Type | Nullable | Range | Description |
+|--------|-----------|----------|-------|-------------|
+| `churn_probability` | `real` | No | 0.00–1.00 | ML model output — probability that customer will churn within next 30 days. Generated by Logistic Regression model. Scores ≥ 0.65 classified as High Risk. |
+| `risk_tier` | `text` | No | `High`, `Medium`, `Low` | Business-readable risk classification derived from `churn_probability`. Thresholds: High ≥ 0.65, Medium 0.35–0.65, Low < 0.35. |
+| `customer_lifetime_value` | `real` | No | ₹ 500–₹ 85,000 | Predicted total future revenue from customer. Formula: `ARPU × Expected_Remaining_Months × 0.85`. Accounts for retention probability. Key metric for retention investment decisions. |
+
+---
+
+### Target Variable
+
+| Column | Data Type | Nullable | Domain | Description |
+|--------|-----------|----------|--------|-------------|
+| `churn` | `integer` | No | `0`, `1` | Binary churn indicator. `1` = customer has churned (ported out or cancelled), `0` = currently active. Historical churn label used for model training and reporting. |
+| `customer_satisfaction_score` | `real` | No | 1.0–5.0 | CSAT score (1 = Very Dissatisfied, 5 = Very Satisfied). Collected via post-interaction surveys. Strong negative predictor of churn. |
+
+---
+
+## Derived Business Metrics (Computed in API / SQL)
+
+These are not stored in the database but computed at query time:
+
+| Metric | Formula | Description |
+|--------|---------|-------------|
+| `churn_rate` | `churned / total × 100` | Percentage of customers who have churned |
+| `retention_rate` | `100 - churn_rate` | Percentage of customers retained |
+| `revenue_at_risk` | `SUM(arpu) WHERE risk_tier = 'High' AND churn = 0` | Monthly revenue exposed to potential churn |
+| `avg_clv` | `AVG(customer_lifetime_value)` | Mean predicted lifetime value across customer base |
+
+---
+
+## Data Lineage
+
+```
+External CSV / Source DB
+        │
+        ▼
+ETL Pipeline (pipeline.py)
+   Extract → Validate → Transform → Quality Check → Upsert
+        │
+        ▼
+PostgreSQL: customers table
+        │
+        ▼
+Express API Server (/api/telecom/*)
+        │
+        ▼
+React Dashboard (TelChurn IQ)
+        │
+        ▼
+Power BI / Excel Export
+```
+
+---
+
+## Data Quality SLAs
+
+| Dimension | Target | Check Method |
+|-----------|--------|-------------|
+| Completeness | > 99.5% non-null on key fields | ETL null audit (Q46) |
+| Validity | 0 range violations | ETL range checks (Q48) |
+| Uniqueness | 0 duplicate `customer_id` | ETL dedup check (Q47) |
+| Timeliness | Data ≤ 24 hours old | `created_at` timestamp check |
+| Accuracy | Churn prob within ±5% of validation set | Model calibration (Q38) |
+
+---
+
+## Glossary
+
+| Term | Definition |
+|------|-----------|
+| **ARPU** | Average Revenue Per User — monthly revenue per customer after discounts |
+| **CLV** | Customer Lifetime Value — total predicted future revenue from a customer |
+| **Churn** | Customer terminating their subscription or porting to another operator |
+| **Risk Tier** | Categorical classification (High/Medium/Low) of churn probability |
+| **CSAT** | Customer Satisfaction Score — survey-based satisfaction metric (1–5) |
+| **ETL** | Extract, Transform, Load — data pipeline process |
+| **KPI** | Key Performance Indicator — top-level business metric |
+| **NPS** | Net Promoter Score — related customer loyalty metric (not in current dataset) |
+| **RFM** | Recency, Frequency, Monetary — classic customer segmentation framework |
+| **MSISDN** | Mobile Subscriber ISDN Number — telecom identifier (mapped to customer_id) |

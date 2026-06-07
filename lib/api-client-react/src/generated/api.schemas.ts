@@ -234,6 +234,40 @@ export interface ContractItem {
   avgClv: number;
 }
 
+export interface CompletenessItem {
+  field: string;
+  nonNullCount: number;
+  nullCount: number;
+  completenessRate: number;
+}
+
+export interface ValidityCheckItem {
+  checkName: string;
+  passed: boolean;
+  violations: number;
+  rule: string;
+}
+
+export interface OutlierItem {
+  field: string;
+  mean: number;
+  stdDev: number;
+  lowerBound: number;
+  upperBound: number;
+  outlierCount: number;
+}
+
+export interface DataQualityReport {
+  totalRecords: number;
+  activeRecords: number;
+  churnedRecords: number;
+  duplicateCount: number;
+  overallScore: number;
+  completeness: CompletenessItem[];
+  validityChecks: ValidityCheckItem[];
+  outlierSummary: OutlierItem[];
+}
+
 export type GetTopAtRiskParams = {
 limit?: number;
 };

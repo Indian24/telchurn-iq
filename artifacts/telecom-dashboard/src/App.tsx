@@ -12,6 +12,8 @@ import Revenue from "@/pages/revenue";
 import Customers from "@/pages/customers";
 import Regional from "@/pages/regional";
 import Ml from "@/pages/ml";
+import DataQuality from "@/pages/data-quality";
+import Architecture from "@/pages/architecture";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -31,6 +33,8 @@ function Router() {
       <Route path="/customers" component={Customers} />
       <Route path="/regional" component={Regional} />
       <Route path="/ml" component={Ml} />
+      <Route path="/data-quality" component={DataQuality} />
+      <Route path="/architecture" component={Architecture} />
       <Route component={NotFound} />
     </Switch>
   );
