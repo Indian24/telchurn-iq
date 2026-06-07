@@ -1,22 +1,23 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Telecom Customer Churn & Revenue Intelligence Platform API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: telecom
+    description: Telecom analytics endpoints
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +25,299 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /telecom/summary:
+    get:
+      operationId: getExecutiveSummary
+      tags: [telecom]
+      summary: Executive overview KPIs
+      responses:
+        "200":
+          description: Executive summary metrics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExecutiveSummary"
+
+  /telecom/churn-overview:
+    get:
+      operationId: getChurnOverview
+      tags: [telecom]
+      summary: Churn analysis metrics
+      responses:
+        "200":
+          description: Churn overview data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChurnOverview"
+
+  /telecom/revenue-trends:
+    get:
+      operationId: getRevenueTrends
+      tags: [telecom]
+      summary: Monthly revenue trends
+      responses:
+        "200":
+          description: Revenue trend data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RevenueTrendItem"
+
+  /telecom/customer-segments:
+    get:
+      operationId: getCustomerSegments
+      tags: [telecom]
+      summary: Customer segmentation by value
+      responses:
+        "200":
+          description: Segment breakdown
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SegmentItem"
+
+  /telecom/regional-performance:
+    get:
+      operationId: getRegionalPerformance
+      tags: [telecom]
+      summary: State-wise performance metrics
+      responses:
+        "200":
+          description: Regional stats
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RegionalItem"
+
+  /telecom/churn-drivers:
+    get:
+      operationId: getChurnDrivers
+      tags: [telecom]
+      summary: Churn driver analysis
+      responses:
+        "200":
+          description: Churn driver data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChurnDrivers"
+
+  /telecom/plan-performance:
+    get:
+      operationId: getPlanPerformance
+      tags: [telecom]
+      summary: Subscription plan performance
+      responses:
+        "200":
+          description: Plan performance
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PlanItem"
+
+  /telecom/top-at-risk:
+    get:
+      operationId: getTopAtRisk
+      tags: [telecom]
+      summary: Top customers at churn risk
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: At-risk customers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AtRiskCustomer"
+
+  /telecom/ml-metrics:
+    get:
+      operationId: getMlMetrics
+      tags: [telecom]
+      summary: ML model performance metrics
+      responses:
+        "200":
+          description: Model metrics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MlMetrics"
+
+  /telecom/network-analysis:
+    get:
+      operationId: getNetworkAnalysis
+      tags: [telecom]
+      summary: Network issue impact analysis
+      responses:
+        "200":
+          description: Network analysis data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/NetworkItem"
+
+  /telecom/arpu-trends:
+    get:
+      operationId: getArpuTrends
+      tags: [telecom]
+      summary: ARPU trends by plan and segment
+      responses:
+        "200":
+          description: ARPU trend data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ArpuTrendItem"
+
+  /telecom/clv-distribution:
+    get:
+      operationId: getClvDistribution
+      tags: [telecom]
+      summary: Customer Lifetime Value distribution
+      responses:
+        "200":
+          description: CLV distribution data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ClvBucket"
+
+  /telecom/customers:
+    get:
+      operationId: getCustomers
+      tags: [telecom]
+      summary: Paginated customer list
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: churn
+          in: query
+          schema:
+            type: string
+        - name: plan
+          in: query
+          schema:
+            type: string
+        - name: state
+          in: query
+          schema:
+            type: string
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+        - name: sortDir
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Customer list with pagination
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomerListResponse"
+
+  /telecom/customers/{customerId}:
+    get:
+      operationId: getCustomerById
+      tags: [telecom]
+      summary: Get single customer details
+      parameters:
+        - name: customerId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Customer detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomerDetail"
+        "404":
+          description: Not found
+
+  /telecom/satisfaction-distribution:
+    get:
+      operationId: getSatisfactionDistribution
+      tags: [telecom]
+      summary: Customer satisfaction score distribution
+      responses:
+        "200":
+          description: Satisfaction data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SatisfactionItem"
+
+  /telecom/payment-methods:
+    get:
+      operationId: getPaymentMethods
+      tags: [telecom]
+      summary: Payment method distribution and churn rates
+      responses:
+        "200":
+          description: Payment method data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PaymentMethodItem"
+
+  /telecom/contract-analysis:
+    get:
+      operationId: getContractAnalysis
+      tags: [telecom]
+      summary: Contract type analysis
+      responses:
+        "200":
+          description: Contract analysis data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ContractItem"
+
 components:
   schemas:
     HealthStatus:
@@ -31,6 +325,532 @@ components:
       properties:
         status:
           type: string
-      required:
-        - status
+      required: [status]
 
+    ExecutiveSummary:
+      type: object
+      required:
+        - totalCustomers
+        - activeCustomers
+        - churnedCustomers
+        - churnRate
+        - totalRevenue
+        - avgArpu
+        - avgClv
+        - avgSatisfactionScore
+        - newCustomersThisMonth
+        - revenueAtRisk
+        - retentionRate
+        - avgTenureMonths
+      properties:
+        totalCustomers:
+          type: integer
+        activeCustomers:
+          type: integer
+        churnedCustomers:
+          type: integer
+        churnRate:
+          type: number
+        totalRevenue:
+          type: number
+        avgArpu:
+          type: number
+        avgClv:
+          type: number
+        avgSatisfactionScore:
+          type: number
+        newCustomersThisMonth:
+          type: integer
+        revenueAtRisk:
+          type: number
+        retentionRate:
+          type: number
+        avgTenureMonths:
+          type: number
+
+    ChurnOverview:
+      type: object
+      required:
+        - churnByPlan
+        - churnByContract
+        - churnByTenureBand
+        - churnBySatisfaction
+        - monthlyChurnRate
+      properties:
+        churnByPlan:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChurnByCategoryItem"
+        churnByContract:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChurnByCategoryItem"
+        churnByTenureBand:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChurnByCategoryItem"
+        churnBySatisfaction:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChurnByCategoryItem"
+        monthlyChurnRate:
+          type: array
+          items:
+            $ref: "#/components/schemas/MonthlyChurnItem"
+
+    ChurnByCategoryItem:
+      type: object
+      required: [category, total, churned, churnRate]
+      properties:
+        category:
+          type: string
+        total:
+          type: integer
+        churned:
+          type: integer
+        churnRate:
+          type: number
+
+    MonthlyChurnItem:
+      type: object
+      required: [month, churnRate, churned, active]
+      properties:
+        month:
+          type: string
+        churnRate:
+          type: number
+        churned:
+          type: integer
+        active:
+          type: integer
+
+    RevenueTrendItem:
+      type: object
+      required: [month, revenue, arpu, subscribers]
+      properties:
+        month:
+          type: string
+        revenue:
+          type: number
+        arpu:
+          type: number
+        subscribers:
+          type: integer
+
+    SegmentItem:
+      type: object
+      required: [segment, count, revenue, avgClv, churnRate]
+      properties:
+        segment:
+          type: string
+        count:
+          type: integer
+        revenue:
+          type: number
+        avgClv:
+          type: number
+        churnRate:
+          type: number
+
+    RegionalItem:
+      type: object
+      required: [state, totalCustomers, activeCustomers, revenue, arpu, churnRate, avgSatisfaction]
+      properties:
+        state:
+          type: string
+        totalCustomers:
+          type: integer
+        activeCustomers:
+          type: integer
+        revenue:
+          type: number
+        arpu:
+          type: number
+        churnRate:
+          type: number
+        avgSatisfaction:
+          type: number
+
+    ChurnDrivers:
+      type: object
+      required:
+        - featureImportance
+        - complaintImpact
+        - networkIssueImpact
+        - tenureRisk
+        - usagePatterns
+      properties:
+        featureImportance:
+          type: array
+          items:
+            $ref: "#/components/schemas/FeatureImportanceItem"
+        complaintImpact:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChurnByCategoryItem"
+        networkIssueImpact:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChurnByCategoryItem"
+        tenureRisk:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChurnByCategoryItem"
+        usagePatterns:
+          type: array
+          items:
+            $ref: "#/components/schemas/UsagePatternItem"
+
+    FeatureImportanceItem:
+      type: object
+      required: [feature, importance, direction]
+      properties:
+        feature:
+          type: string
+        importance:
+          type: number
+        direction:
+          type: string
+
+    UsagePatternItem:
+      type: object
+      required: [band, avgInternetGB, avgVoiceMin, avgSmsUsage, churnRate, count]
+      properties:
+        band:
+          type: string
+        avgInternetGB:
+          type: number
+        avgVoiceMin:
+          type: number
+        avgSmsUsage:
+          type: number
+        churnRate:
+          type: number
+        count:
+          type: integer
+
+    PlanItem:
+      type: object
+      required: [plan, subscribers, revenue, arpu, churnRate, avgClv]
+      properties:
+        plan:
+          type: string
+        subscribers:
+          type: integer
+        revenue:
+          type: number
+        arpu:
+          type: number
+        churnRate:
+          type: number
+        avgClv:
+          type: number
+
+    AtRiskCustomer:
+      type: object
+      required:
+        - customerId
+        - state
+        - subscriptionType
+        - monthlyCharges
+        - churnProbability
+        - riskTier
+        - customerSatisfactionScore
+        - complaintCount
+        - tenure
+      properties:
+        customerId:
+          type: string
+        state:
+          type: string
+        subscriptionType:
+          type: string
+        monthlyCharges:
+          type: number
+        churnProbability:
+          type: number
+        riskTier:
+          type: string
+        customerSatisfactionScore:
+          type: number
+        complaintCount:
+          type: integer
+        tenure:
+          type: integer
+
+    MlMetrics:
+      type: object
+      required:
+        - accuracy
+        - precision
+        - recall
+        - f1Score
+        - rocAuc
+        - totalPredicted
+        - highRisk
+        - mediumRisk
+        - lowRisk
+        - confusionMatrix
+      properties:
+        accuracy:
+          type: number
+        precision:
+          type: number
+        recall:
+          type: number
+        f1Score:
+          type: number
+        rocAuc:
+          type: number
+        totalPredicted:
+          type: integer
+        highRisk:
+          type: integer
+        mediumRisk:
+          type: integer
+        lowRisk:
+          type: integer
+        confusionMatrix:
+          type: object
+          required: [truePositive, falsePositive, trueNegative, falseNegative]
+          properties:
+            truePositive:
+              type: integer
+            falsePositive:
+              type: integer
+            trueNegative:
+              type: integer
+            falseNegative:
+              type: integer
+
+    NetworkItem:
+      type: object
+      required: [networkIssues, customerCount, churnRate, avgSatisfaction, avgComplaintCount]
+      properties:
+        networkIssues:
+          type: integer
+        customerCount:
+          type: integer
+        churnRate:
+          type: number
+        avgSatisfaction:
+          type: number
+        avgComplaintCount:
+          type: number
+
+    ArpuTrendItem:
+      type: object
+      required: [month, basic, standard, premium, enterprise]
+      properties:
+        month:
+          type: string
+        basic:
+          type: number
+        standard:
+          type: number
+        premium:
+          type: number
+        enterprise:
+          type: number
+
+    ClvBucket:
+      type: object
+      required: [bucket, count, avgClv, churnRate]
+      properties:
+        bucket:
+          type: string
+        count:
+          type: integer
+        avgClv:
+          type: number
+        churnRate:
+          type: number
+
+    CustomerRecord:
+      type: object
+      required:
+        - customerId
+        - gender
+        - age
+        - state
+        - city
+        - tenure
+        - subscriptionType
+        - monthlyCharges
+        - totalCharges
+        - contractType
+        - churn
+        - churnProbability
+        - riskTier
+        - arpu
+        - customerLifetimeValue
+        - customerSatisfactionScore
+      properties:
+        customerId:
+          type: string
+        gender:
+          type: string
+        age:
+          type: integer
+        state:
+          type: string
+        city:
+          type: string
+        tenure:
+          type: integer
+        subscriptionType:
+          type: string
+        monthlyCharges:
+          type: number
+        totalCharges:
+          type: number
+        contractType:
+          type: string
+        churn:
+          type: integer
+        churnProbability:
+          type: number
+        riskTier:
+          type: string
+        arpu:
+          type: number
+        customerLifetimeValue:
+          type: number
+        customerSatisfactionScore:
+          type: number
+
+    CustomerListResponse:
+      type: object
+      required: [data, total, page, limit]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/CustomerRecord"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+
+    CustomerDetail:
+      type: object
+      required:
+        - customerId
+        - gender
+        - age
+        - state
+        - city
+        - tenure
+        - subscriptionType
+        - monthlyCharges
+        - totalCharges
+        - internetUsageGb
+        - voiceMinutes
+        - smsUsage
+        - rechargeFrequency
+        - customerSupportCalls
+        - complaintCount
+        - networkIssues
+        - paymentMethod
+        - contractType
+        - customerSatisfactionScore
+        - arpu
+        - revenue
+        - churn
+        - customerLifetimeValue
+        - churnProbability
+        - riskTier
+      properties:
+        customerId:
+          type: string
+        gender:
+          type: string
+        age:
+          type: integer
+        state:
+          type: string
+        city:
+          type: string
+        tenure:
+          type: integer
+        subscriptionType:
+          type: string
+        monthlyCharges:
+          type: number
+        totalCharges:
+          type: number
+        internetUsageGb:
+          type: number
+        voiceMinutes:
+          type: number
+        smsUsage:
+          type: number
+        rechargeFrequency:
+          type: integer
+        customerSupportCalls:
+          type: integer
+        complaintCount:
+          type: integer
+        networkIssues:
+          type: integer
+        paymentMethod:
+          type: string
+        contractType:
+          type: string
+        customerSatisfactionScore:
+          type: number
+        arpu:
+          type: number
+        revenue:
+          type: number
+        churn:
+          type: integer
+        customerLifetimeValue:
+          type: number
+        churnProbability:
+          type: number
+        riskTier:
+          type: string
+
+    SatisfactionItem:
+      type: object
+      required: [score, count, churnRate]
+      properties:
+        score:
+          type: integer
+        count:
+          type: integer
+        churnRate:
+          type: number
+
+    PaymentMethodItem:
+      type: object
+      required: [method, count, revenue, churnRate]
+      properties:
+        method:
+          type: string
+        count:
+          type: integer
+        revenue:
+          type: number
+        churnRate:
+          type: number
+
+    ContractItem:
+      type: object
+      required: [contractType, count, revenue, churnRate, avgTenure, avgClv]
+      properties:
+        contractType:
+          type: string
+        count:
+          type: integer
+        revenue:
+          type: number
+        churnRate:
+          type: number
+        avgTenure:
+          type: number
+        avgClv:
+          type: number

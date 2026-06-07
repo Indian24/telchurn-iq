@@ -1,0 +1,31 @@
+kind = "data-app"
+previewPath = "/"
+title = "Telecom Churn & Revenue Intelligence"
+version = "1.0.0"
+id = "artifacts/telecom-dashboard"
+router = "path"
+
+[[integratedSkills]]
+name = "data-visualization"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 22742
+
+[services.development]
+run = "pnpm --filter @workspace/telecom-dashboard run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/telecom-dashboard", "run", "build" ]
+publicDir = "artifacts/telecom-dashboard/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "22742"
+BASE_PATH = "/"
