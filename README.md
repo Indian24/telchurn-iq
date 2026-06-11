@@ -11,20 +11,22 @@
 [![License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
 
 ---
-
 ## Live Preview
 
-| Page | Description |
-|------|-------------|
-| `/` | **Executive Overview** — 8 KPI cards, revenue trend, churn trend, segment donut |
-| `/churn` | **Churn Analytics** — breakdown by plan, contract, tenure, satisfaction, drivers |
-| `/revenue` | **Revenue Analytics** — ARPU trends, CLV distribution, plan performance table |
-| `/customers` | **Customer Explorer** — searchable 50K table with full detail drawer |
-| `/regional` | **Regional Performance** — 20 Indian states, sortable, bar charts |
-| `/ml` | **ML & Prediction** — model metrics, confusion matrix, feature importance |
-| `/data-quality` | **Data Quality** — completeness, validity, outliers, ETL health |
-| `/architecture` | **Architecture** — interactive system architecture diagram |
+### Executive Overview
+![Executive Overview](attached_assets/1.png)
 
+### Regional Performance
+![Regional Performance](attached_assets/2.png)
+
+### Architecture
+![Architecture](attached_assets/3.png)
+
+### Revenue & Churn Analytics
+![Revenue & Churn Analytics](attached_assets/4.png)
+
+### KPI Dashboard
+![KPI Dashboard](attached_assets/5.png)
 ---
 
 ## Key Metrics (Live Data)
