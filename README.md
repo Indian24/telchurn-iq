@@ -25,8 +25,6 @@
 ### Revenue & Churn Analytics
 ![Revenue & Churn Analytics](attached_assets/4.png)
 
-### KPI Dashboard
-![KPI Dashboard](attached_assets/5.png)
 ---
 
 ## Key Metrics (Live Data)
