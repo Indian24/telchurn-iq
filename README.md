@@ -1,6 +1,6 @@
 # TelChurn IQ — Telecom Customer Churn & Revenue Intelligence Platform
 
-> **EY-grade, portfolio-ready analytics platform** for a 50,000-customer Indian telecom operator.  
+> **Analytics platform** for a 50,000-customer Indian telecom operator.  
 > Built with React + Vite, Express API, PostgreSQL, and ML-based churn scoring.
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue?logo=typescript)](https://typescriptlang.org)
